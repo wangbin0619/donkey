@@ -11,7 +11,7 @@ You might need to do a: pip install scikit-learn
 
 
 Usage:
-    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous] [--aug]
+    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|look_ahead)] [--continuous] [--aug]
 
 Options:
     -h --help     Show this screen.    
@@ -31,7 +31,7 @@ import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.parts.keras import KerasLinear, KerasIMU,\
      KerasCategorical, KerasBehavioral, Keras3D_CNN,\
-     KerasRNN_LSTM
+     KerasRNN_LSTM, KerasLookAhead
 from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
 
@@ -567,6 +567,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     assert(not continuous)
 
     print("sequence of images training")
+    look_ahead = False
 
     if model_type == "rnn":
         kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W,
@@ -580,6 +581,10 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
             image_d=cfg.IMAGE_DEPTH,
             seq_length=cfg.SEQUENCE_LENGTH,
             num_outputs=2)
+    elif model_type == "look_ahead":
+        kl = KerasLookAhead()
+        cfg.SEQUENCE_LENGTH = 20
+        look_ahead = True
     else:
         raise Exception("unknown model type: %s" % model_type)
 
@@ -615,6 +620,8 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
         throttle = float(json_data["user/throttle"])
 
         sample['target_output'] = np.array([angle, throttle])
+        sample['angle'] = angle
+        sample['throttle'] = throttle
 
         sample['img_data'] = None
 
@@ -650,7 +657,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     train_data, val_data  = train_test_split(sequences, shuffle=True, test_size=(1 - cfg.TRAIN_TEST_SPLIT))
 
 
-    def generator(data, batch_size=cfg.BATCH_SIZE):
+    def generator(data, opt, batch_size=cfg.BATCH_SIZE):
         num_records = len(data)
 
         while True:
@@ -664,44 +671,77 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
                     break
 
                 b_inputs_img = []
+                b_vec_in = []
                 b_labels = []
+                b_vec_out = []
 
                 for seq in batch_data:
                     inputs_img = []
+                    vec_in = []
                     labels = []
-                    for record in seq:
-                        #get image data if we don't already have it
-                        if record['img_data'] is None:
-                            img_arr = load_scaled_image_arr(record['image_path'], cfg)
-                            if img_arr is None:
-                                break
-                            if aug:
-                                img_arr = augment_image(img_arr)
-                            if cfg.CACHE_IMAGES:
-                                record['img_data'] = img_arr
-                        else:
-                            img_arr = record['img_data']                            
-                            
-                        inputs_img.append(img_arr)
-                    
-                    if img_arr is None:
-                        continue
+                    vec_out = []
+                    num_images_target = len(seq)
+                    iTargetOutput = -1
+                    if opt['look_ahead']:
+                        num_images_target = 10
+                        iTargetOutput = 9
 
-                    labels.append(seq[-1]['target_output'])
+                    for iRec, record in enumerate(seq):
+                        #get image data if we don't already have it
+                        if len(inputs_img) < num_images_target:
+                            if record['img_data'] is None:
+                                img_arr = load_scaled_image_arr(record['image_path'], cfg)
+                                if img_arr is None:
+                                    break
+                                if aug:
+                                    img_arr = augment_image(img_arr)
+
+                                if look_ahead:
+                                    img_arr = rgb2gray(img_arr)
+
+                                if cfg.CACHE_IMAGES:
+                                    record['img_data'] = img_arr
+                            else:
+                                img_arr = record['img_data']                  
+                                
+                            inputs_img.append(img_arr)
+
+                        if iRec >= iTargetOutput:
+                            vec_out.append(record['angle'])
+                            vec_out.append(record['throttle'])
+                        else:
+                            vec_in.append(0.0) #record['angle'])
+                            vec_in.append(0.0) #record['throttle'])
+                        
+                    label_vec = seq[iTargetOutput]['target_output']
+
+                    if look_ahead:
+                        label_vec = np.array(vec_out)
+
+                    labels.append(label_vec)
 
                     b_inputs_img.append(inputs_img)
+                    b_vec_in.append(vec_in)
+
                     b_labels.append(labels)
 
-                X = [np.array(b_inputs_img).reshape(batch_size,\
-                    cfg.SEQUENCE_LENGTH, cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)]
-
-                y = np.array(b_labels).reshape(batch_size, 2)
+                
+                if look_ahead:
+                    X = [np.array(b_inputs_img).reshape(batch_size,\
+                        cfg.IMAGE_H, cfg.IMAGE_W, 10)]
+                    X.append(np.array(b_vec_in))
+                    y = np.array(b_labels).reshape(batch_size, 22)
+                else:
+                    X = [np.array(b_inputs_img).reshape(batch_size,\
+                        cfg.SEQUENCE_LENGTH, cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)]
+                    y = np.array(b_labels).reshape(batch_size, 2)
 
                 yield X, y
 
-    train_gen = generator(train_data)
-    val_gen = generator(val_data)
-    
+    opt = { 'look_ahead' : look_ahead }
+
+    train_gen = generator(train_data, opt)
+    val_gen = generator(val_data, opt)   
 
     model_path = os.path.expanduser(model_name)
 
@@ -730,7 +770,7 @@ def multi_train(cfg, tub, model, transfer, model_type, continuous, aug):
     choose the right regime for the given model type
     '''
     train_fn = train
-    if model_type in ("rnn",'3d'):
+    if model_type in ("rnn",'3d','look_ahead'):
         train_fn = sequence_train
 
     train_fn(cfg, tub, model, transfer, model_type, continuous, aug)

@@ -245,6 +245,46 @@ class KerasLocalizer(KerasPilot):
         
         return angle_unbinned, throttle
 
+
+class KerasLookAhead(KerasPilot):
+    '''
+    A Keras part that take an image and Behavior vector as input,
+    outputs steering and throttle, and localisation category
+    '''
+    def __init__(self, model=None, num_vec_in=18, num_vec_out=22, input_shape=(120, 160, 10), num_hist=10, *args, **kwargs):
+        super(KerasLookAhead, self).__init__(*args, **kwargs)
+        from donkeycar.parts.cv import ImgStack
+        self.model = default_look_ahead(num_vec_in=num_vec_in, num_vec_out=num_vec_out, input_shape=input_shape)
+        self.compile()
+        self.num_hist = num_hist
+        self.st_th_hist = [ 0.0 for i in range(num_vec_in)]
+        self.img_stack = ImgStack(num_channels=num_hist)
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer, metrics=['acc'],
+                  loss={'vec_out' : 'mse'})
+        
+    def run(self, img_arr):
+
+        img_arr = self.img_stack.run(img_arr)
+        
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+
+        vec_in = np.array(self.st_th_hist)
+
+        vec_out = self.model.predict([img_arr, vec_in])
+
+        throttle = vec_out[0][1]
+        steering = vec_out[0][0]
+
+        self.st_th_hist.pop(0)
+        self.st_th_hist.pop(0)
+        self.st_th_hist.append(steering)
+        self.st_th_hist.append(throttle)
+        
+        return steering, throttle
+
+
 def default_categorical(input_shape=(120, 160, 3)):
     from keras.layers import Input, Dense
     from keras.models import Model
@@ -477,6 +517,56 @@ def default_loc(num_outputs, num_locations, input_shape):
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out, loc_out])
     
     return model
+
+
+
+def default_look_ahead(num_vec_out, num_vec_in, input_shape):
+    '''
+    This model tries to model the past with N stacked monochrome images of the past.
+    It tries to predict num_vec_out / 2 future steering and throttle values.
+    The vec_in is the steering / throttle values for the N - 1 images of the past.
+    '''
+
+    from keras.layers import Input, Dense
+    from keras.models import Model
+    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
+    from keras.layers.merge import concatenate
+    
+    img_in = Input(shape=input_shape, name='img_in')
+    vec_in = Input(shape=(num_vec_in,), name="vec_in")
+    
+    x = img_in
+    x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    x = Flatten(name='flattened')(x)
+    x = Dense(100, activation='relu')(x)
+    x = Dropout(.1)(x)
+    
+    y = vec_in
+    y = Dense(num_vec_in * 2, activation='relu')(y)
+    y = Dense(num_vec_in * 2, activation='relu')(y)
+    y = Dense(num_vec_in * 2, activation='relu')(y)
+    
+    z = concatenate([x, y])
+    z = Dense(500, activation='relu')(z)
+    z = Dropout(.1)(z)
+    z = Dense(100, activation='relu')(z)
+    z = Dropout(.1)(z)
+    z = Dense(50, activation='relu')(z)
+    z = Dropout(.1)(z)
+    
+    #pred vector out
+    vec_out = Dense(num_vec_out, activation="linear", name="vec_out")(z)
+
+    model = Model(inputs=[img_in, vec_in], outputs=[vec_out])
+    
+    return model
+
 
 
 class KerasRNN_LSTM(KerasPilot):
