@@ -248,17 +248,17 @@ class KerasLocalizer(KerasPilot):
 
 class KerasLookAhead(KerasPilot):
     '''
-    A Keras part that take an image and Behavior vector as input,
-    outputs steering and throttle, and localisation category
+    A Keras part that take an image and vector as input,
+    outputs steering and throttle predictions for the next N frames
     '''
-    def __init__(self, model=None, num_vec_in=18, num_vec_out=22, input_shape=(120, 160, 10), num_hist=10, *args, **kwargs):
+    def __init__(self, model=None, num_vec_in=18, num_vec_out=22, input_shape=(120, 160, 10), *args, **kwargs):
         super(KerasLookAhead, self).__init__(*args, **kwargs)
         from donkeycar.parts.cv import ImgStack
         self.model = default_look_ahead(num_vec_in=num_vec_in, num_vec_out=num_vec_out, input_shape=input_shape)
         self.compile()
-        self.num_hist = num_hist
+        self.num_hist = input_shape[2]
         self.st_th_hist = [ 0.0 for i in range(num_vec_in)]
-        self.img_stack = ImgStack(num_channels=num_hist)
+        self.img_stack = ImgStack(num_channels=self.num_hist)
 
     def compile(self):
         self.model.compile(optimizer=self.optimizer, metrics=['acc'],
@@ -272,15 +272,21 @@ class KerasLookAhead(KerasPilot):
 
         vec_in = np.array(self.st_th_hist)
 
+        vec_in = vec_in.reshape((1,len(self.st_th_hist)))
+
         vec_out = self.model.predict([img_arr, vec_in])
 
         throttle = vec_out[0][1]
         steering = vec_out[0][0]
 
+        print("st", steering, "th", throttle)
+
+        '''
         self.st_th_hist.pop(0)
         self.st_th_hist.pop(0)
         self.st_th_hist.append(steering)
         self.st_th_hist.append(throttle)
+        '''
         
         return steering, throttle
 
@@ -553,7 +559,7 @@ def default_look_ahead(num_vec_out, num_vec_in, input_shape):
     y = Dense(num_vec_in * 2, activation='relu')(y)
     
     z = concatenate([x, y])
-    z = Dense(500, activation='relu')(z)
+    z = Dense(100, activation='relu')(z)
     z = Dropout(.1)(z)
     z = Dense(100, activation='relu')(z)
     z = Dropout(.1)(z)

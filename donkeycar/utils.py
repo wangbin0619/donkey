@@ -389,8 +389,8 @@ def gather_records(cfg, tub_names, opts=None, verbose=False):
     return records
 
 def get_model_by_type(model_type, cfg):
-    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, KerasLocalizer
- 
+    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, KerasLocalizer, KerasLookAhead
+
     if model_type is None:
         model_type = "categorical"
 
@@ -410,6 +410,9 @@ def get_model_by_type(model_type, cfg):
         kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
     elif model_type == "categorical":
         kl = KerasCategorical(input_shape=input_shape)
+    elif model_type == "look_ahead":
+        input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.SEQUENCE_LENGTH)
+        kl = KerasLookAhead(num_vec_in=(cfg.SEQUENCE_LENGTH - 1) * 2, num_vec_out=(cfg.SEQUENCE_LENGTH + 1) * 2, input_shape=input_shape)
     else:
         raise Exception("unknown model type: %s" % model_type)
 

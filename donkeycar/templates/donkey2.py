@@ -99,7 +99,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
         if cfg.DONKEY_GYM:
             from donkeycar.parts.dgym import DonkeyGymEnv 
-            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, env_name=cfg.DONKEY_GYM_ENV_NAME)
+            input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, input_shape=input_shape, env_name=cfg.DONKEY_GYM_ENV_NAME)
             threaded = True
             inputs = ['angle', 'throttle']
         elif cfg.CAMERA_TYPE == "PICAM":
@@ -137,6 +138,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
             V.add(netwkJs, threaded=True)
             ctr.js = netwkJs
+            
+        if cfg.START_IN_AI_MODE:
+            ctr.mode = 'local'
 
     else:        
         #This web controller will create a web server that is capable
