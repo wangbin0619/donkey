@@ -5,10 +5,84 @@ are wrapped in a mixer class before being used in the drive loop.
 """
 
 import time
-
 import donkeycar as dk
 
-        
+# package for EV3 Controller
+import datetime
+import donkeycar.parts.ev3_package.ev3 as ev3
+import donkeycar.parts.ev3_package.ev3mail as ev3mail
+flag = False
+
+class EV3_Controller:
+    '''
+    EV3 motor controller using EV3 brick
+    '''
+    def __init__(self):
+        # Initialise the EV3 module
+        global my_ev3
+        global flag
+        if flag == False:
+            print ("Initialise the EV3 module")
+            my_ev3 = ev3.EV3(protocol=ev3.WIFI, host='00:16:53:44:23:17')
+            my_ev3.verbosity = 0
+            flag = True
+        else:
+            print ("Skip EV3 Initialialise")
+
+        self.pre_angle = 0
+        self.pre_throttle = 0
+
+    def set_pulse(self, pulse):
+        try:
+            tmp = 1
+            #print ("Bin's update - set_pulse", tmp++)
+            #self.pwm.set_pwm(self.channel, 0, pulse)
+        except OSError as err:
+            print("Unexpected issue setting PWM (check wires to motor board): {0}".format(err))
+
+    def set_Steering(self, angle):
+        try:
+            angle = int(angle * 45)
+            if angle < 1 and angle > -1 :
+                angle = 0
+
+            if angle == self.pre_angle:
+                #print("skip since angle keep same: angle {} pre_angle {}".format(angle, self.pre_angle))
+                return
+            else:
+                self.pre_angle = angle
+
+            now = datetime.datetime.now().strftime('%H:%M:%S.%f')
+            print(now + " Ev3 Steering <<< >>> Angle: {:+3d}".format(angle))
+            s = ev3mail.ev3mailbox.encodeMessage(ev3mail.MessageType.Numeric, 'AngleBox', angle)
+            my_ev3.send_system_cmd(s, False)
+
+        except OSError as err:
+            print("Unexpected issue setting Steering (check wires to motor board): {0}".format(err))
+
+    def set_Throttle(self, throttle):
+        try:
+            throttle = int(throttle * 40)
+
+            if throttle == self.pre_throttle:
+                #print("skip since throttle keep same: throttle {} pre_throttle {}".format(throttle,self.pre_throttle))
+                return
+            else:
+                self.pre_throttle = throttle
+
+            now = datetime.datetime.now().strftime('%H:%M:%S.%f')
+            print(now + " Ev3 Throttle ^^^ vvv Throttle: {:+3d} ".format(throttle))
+            s = ev3mail.ev3mailbox.encodeMessage(ev3mail.MessageType.Numeric, 'ThrottleBox', throttle)
+            my_ev3.send_system_cmd(s, False)
+            # time.sleep(0.5)
+
+        except OSError as err:
+            print("Unexpected issue setting Throttle EV3 (check wires to motor board): {0}".format(err))
+
+    def run(self, pulse):
+        print ("Bin's update - run")
+        #self.set_pulse(pulse)
+
 class PCA9685:
     ''' 
     PWM motor controler using PCA9685 boards. 
@@ -141,12 +215,16 @@ class PWMSteering:
 
 
     def run(self, angle):
+        '''
         #map absolute angle to angle that vehicle can implement.
         pulse = dk.utils.map_range(angle,
                                 self.LEFT_ANGLE, self.RIGHT_ANGLE,
                                 self.left_pulse, self.right_pulse)
 
         self.controller.set_pulse(pulse)
+        '''
+        # wangbin
+        self.controller.set_Steering(angle)
 
     def shutdown(self):
         self.run(0) #set steering straight
@@ -182,6 +260,7 @@ class PWMThrottle:
 
 
     def run(self, throttle):
+        '''
         if throttle > 0:
             pulse = dk.utils.map_range(throttle,
                                     0, self.MAX_THROTTLE, 
@@ -192,7 +271,10 @@ class PWMThrottle:
                                     self.min_pulse, self.zero_pulse)
 
         self.controller.set_pulse(pulse)
-        
+        '''
+        # wangbin
+        self.controller.set_Throttle(throttle)
+
     def shutdown(self):
         self.run(0) #stop vehicle
 
