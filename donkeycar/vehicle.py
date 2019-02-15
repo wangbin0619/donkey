@@ -91,6 +91,22 @@ class Vehicle():
             print('Starting vehicle...')
             #time.sleep(1)
 
+            from donkeycar.parts.actuator import EV3_Controller
+            import donkeycar.parts.ev3_package.ev3mail as ev3mail
+            import datetime
+
+            my_ev3 = EV3_Controller.get_ev3()
+            
+            sound_start = 1
+            sound_off = 0
+
+            now = datetime.datetime.now().strftime('%H:%M:%S.%f')
+            print(now + " Donkeycar Start... ===>>> ")
+            s = ev3mail.ev3mailbox.encodeMessage(ev3mail.MessageType.Numeric, 'Sound', sound_start)
+            my_ev3.send_system_cmd(s, False)
+            s = ev3mail.ev3mailbox.encodeMessage(ev3mail.MessageType.Numeric, 'Sound', sound_off)
+            my_ev3.send_system_cmd(s, False)
+
             loop_count = 0
             while self.on:
                 start_time = time.time()

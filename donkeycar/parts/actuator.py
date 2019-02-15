@@ -32,6 +32,9 @@ class EV3_Controller:
         self.pre_angle = 0
         self.pre_throttle = 0
 
+    def get_ev3():
+        return my_ev3
+        
     def set_pulse(self, pulse):
         try:
             tmp = 1
