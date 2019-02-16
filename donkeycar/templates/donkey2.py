@@ -398,7 +398,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                                         right_pulse=cfg.STEERING_RIGHT_PWM)
         
         #throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        throttle_controller = PCA9685()
+        throttle_controller = EV3_Controller() #..
         throttle = PWMThrottle(controller=throttle_controller,
                                         max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                         zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
