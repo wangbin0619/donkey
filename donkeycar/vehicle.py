@@ -91,8 +91,8 @@ class Vehicle():
             print('Starting vehicle...')
             #time.sleep(1)
 
-            from donkeycar.parts.actuator import EV3_Controller
-            EV3_Controller.start_sound()
+#            from donkeycar.parts.actuator import EV3_Controller
+#            EV3_Controller.start_sound()
 
             loop_count = 0
             while self.on:

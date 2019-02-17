@@ -9,8 +9,6 @@ import donkeycar as dk
 
 # package for EV3 Controller
 import datetime
-#import donkeycar.parts.ev3_package.ev3 as ev3
-#import donkeycar.parts.ev3_package.ev3mail as ev3mail
 import rpyc
 
 flag = False
@@ -25,22 +23,23 @@ class EV3_Controller:
         
         if flag == False:
 
-            self.conn = rpyc.classic.connect('ev3devS1')
+#            self.conn = rpyc.classic.connect('ev3devS1')
+            self.conn = rpyc.classic.connect('192.168.31.30')
 
-            self.ev3_motor = conn.modules['ev3dev2.motor']
-            self.steer_pair = ev3_motor.MoveSteering(ev3_motor.OUTPUT_B, ev3_motor.OUTPUT_C)
+            self.ev3_motor = self.conn.modules['ev3dev2.motor']
+            self.steer_pair = self.ev3_motor.MoveSteering(self.ev3_motor.OUTPUT_B, self.ev3_motor.OUTPUT_C)
 
-            self.ev3_sound = conn.modules['ev3dev2.sound']
-            self.sound = ev3_sound.Sound()
+            self.ev3_sound = self.conn.modules['ev3dev2.sound']
+            self.sound = self.ev3_sound.Sound()
 
             print ("Initialise the EV3 module")
-            flag = True
+            #flag = True
         else:
             print ("Skip EV3 Initialialise")
 
         self.pre_angle = 0
         self.pre_throttle = 0
-        steer_pair.on(steering=self.pre_angle, speed=self.pre_throttle)
+        self.steer_pair.on(steering=self.pre_angle, speed=self.pre_throttle)
 
     def set_pulse(self, pulse):
         try:
@@ -87,7 +86,7 @@ class EV3_Controller:
         except OSError as err:
             print("Unexpected issue setting Throttle EV3 (check wires to motor board): {0}".format(err))
 
-    def start_sound():
+    def start_sound(self):
 
         # see http://espeak.sourceforge.net/
         # values -a 200 -s 130 SHOULD BE INCLUDED if specifying any other options
