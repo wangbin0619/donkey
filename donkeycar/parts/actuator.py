@@ -21,21 +21,16 @@ class EV3_Controller:
         # Initialise the EV3 module
         global flag
         
-        if flag == False:
+#        self.conn = rpyc.classic.connect('ev3devS1')
+        self.conn = rpyc.classic.connect('192.168.31.30')
 
-#            self.conn = rpyc.classic.connect('ev3devS1')
-            self.conn = rpyc.classic.connect('192.168.31.30')
+        self.ev3_motor = self.conn.modules['ev3dev2.motor']
+        self.steer_pair = self.ev3_motor.MoveSteering(self.ev3_motor.OUTPUT_B, self.ev3_motor.OUTPUT_C)
 
-            self.ev3_motor = self.conn.modules['ev3dev2.motor']
-            self.steer_pair = self.ev3_motor.MoveSteering(self.ev3_motor.OUTPUT_B, self.ev3_motor.OUTPUT_C)
+        self.ev3_sound = self.conn.modules['ev3dev2.sound']
+        self.sound = self.ev3_sound.Sound()
 
-            self.ev3_sound = self.conn.modules['ev3dev2.sound']
-            self.sound = self.ev3_sound.Sound()
-
-            print ("Initialise the EV3 module")
-            #flag = True
-        else:
-            print ("Skip EV3 Initialialise")
+        print ("Initialise the EV3 module")
 
         self.pre_angle = 0
         self.pre_throttle = 0
@@ -62,7 +57,7 @@ class EV3_Controller:
                 self.pre_angle = angle
 
             now = datetime.datetime.now().strftime('%H:%M:%S.%f')
-            print(now + " Ev3 Steering <<< >>> Angle: {:+3d}".format(angle))
+            print(now + " Ev3 Steering <<< >>> Angle: {:+3d} Throrrle: {:+3d}".format(angle,self.pre_throttle))
             self.steer_pair.on(steering=angle,speed=self.pre_throttle)
 
         except OSError as err:
@@ -79,7 +74,7 @@ class EV3_Controller:
                 self.pre_throttle = throttle
 
             now = datetime.datetime.now().strftime('%H:%M:%S.%f')
-            print(now + " Ev3 Throttle ^^^ vvv Throttle: {:+3d} ".format(throttle))
+            print(now + " Ev3 Throttle ^^^ vvv Throttle: {:+3d} Angle: {:+3d} ".format(throttle,self.pre_angle))
             self.steer_pair.on(steering=self.pre_angle,speed=throttle)
             # time.sleep(0.5)
 

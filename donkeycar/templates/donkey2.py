@@ -119,7 +119,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
-        from donkeycar.parts.controller import PS3JoystickController, PS4JoystickController
+#        from donkeycar.parts.controller import PS3JoystickController, PS4JoystickController
+        from donkeycar.parts.donkeypart_ps3_controller.donkeypart_ps3_controller import PS3JoystickController 
         
         cont_class = PS3JoystickController
 
@@ -130,7 +131,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                                  steering_scale=cfg.JOYSTICK_STEERING_SCALE,
                                  auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
         
-        ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
+#        ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
 
         if cfg.USE_NETWORKED_JS:
             from donkeycar.parts.controller import JoyStickSub
@@ -398,7 +399,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                                         right_pulse=cfg.STEERING_RIGHT_PWM)
         
         #throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        throttle_controller = EV3_Controller()
+        #throttle_controller = EV3_Controller()
+        throttle_controller = steering_controller # Steering and throttle use same controller considering EV3 movesteering API definition
         throttle = PWMThrottle(controller=throttle_controller,
                                         max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                         zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
