@@ -9,8 +9,10 @@ import donkeycar as dk
 
 # package for EV3 Controller
 import datetime
-import donkeycar.parts.ev3_package.ev3 as ev3
-import donkeycar.parts.ev3_package.ev3mail as ev3mail
+#import donkeycar.parts.ev3_package.ev3 as ev3
+#import donkeycar.parts.ev3_package.ev3mail as ev3mail
+import rpyc
+
 flag = False
 
 class EV3_Controller:
@@ -19,22 +21,27 @@ class EV3_Controller:
     '''
     def __init__(self):
         # Initialise the EV3 module
-        global my_ev3
         global flag
+        
         if flag == False:
+
+            self.conn = rpyc.classic.connect('ev3devS1')
+
+            self.ev3_motor = conn.modules['ev3dev2.motor']
+            self.steer_pair = ev3_motor.MoveSteering(ev3_motor.OUTPUT_B, ev3_motor.OUTPUT_C)
+
+            self.ev3_sound = conn.modules['ev3dev2.sound']
+            self.sound = ev3_sound.Sound()
+
             print ("Initialise the EV3 module")
-            my_ev3 = ev3.EV3(protocol=ev3.WIFI, host='00:16:53:44:23:17')
-            my_ev3.verbosity = 0
             flag = True
         else:
             print ("Skip EV3 Initialialise")
 
         self.pre_angle = 0
         self.pre_throttle = 0
+        steer_pair.on(steering=self.pre_angle, speed=self.pre_throttle)
 
-    def get_ev3():
-        return my_ev3
-        
     def set_pulse(self, pulse):
         try:
             tmp = 1
@@ -57,8 +64,7 @@ class EV3_Controller:
 
             now = datetime.datetime.now().strftime('%H:%M:%S.%f')
             print(now + " Ev3 Steering <<< >>> Angle: {:+3d}".format(angle))
-            s = ev3mail.ev3mailbox.encodeMessage(ev3mail.MessageType.Numeric, 'AngleBox', angle)
-            my_ev3.send_system_cmd(s, False)
+            self.steer_pair.on(steering=angle,speed=self.pre_throttle)
 
         except OSError as err:
             print("Unexpected issue setting Steering (check wires to motor board): {0}".format(err))
@@ -75,12 +81,23 @@ class EV3_Controller:
 
             now = datetime.datetime.now().strftime('%H:%M:%S.%f')
             print(now + " Ev3 Throttle ^^^ vvv Throttle: {:+3d} ".format(throttle))
-            s = ev3mail.ev3mailbox.encodeMessage(ev3mail.MessageType.Numeric, 'ThrottleBox', throttle)
-            my_ev3.send_system_cmd(s, False)
+            self.steer_pair.on(steering=self.pre_angle,speed=throttle)
             # time.sleep(0.5)
 
         except OSError as err:
             print("Unexpected issue setting Throttle EV3 (check wires to motor board): {0}".format(err))
+
+    def start_sound():
+
+        # see http://espeak.sourceforge.net/
+        # values -a 200 -s 130 SHOULD BE INCLUDED if specifying any other options
+        # a = amplitude (200 max, 100 default), s = speed 80-500, default = 175)
+
+        opts = '-a 200 -s 130 -v'
+        # str_en = "I think you ought to know, I'm feeling very depressed"
+        str_zh = "zhun bei chu fa"
+        self.sound.speak(str_zh, espeak_opts='-a 200 -s 130 -zh')
+
 
     def run(self, pulse):
         print ("Bin's update - run")
