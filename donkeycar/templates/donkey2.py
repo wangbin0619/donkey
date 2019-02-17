@@ -227,7 +227,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             record_tracker.last_num_rec_print = num_records
 
             if num_records % 10 == 0:
-                print("recorded", num_records, "records")
+            #    print("recorded", num_records, "records")
+                pass
                     
             if num_records % cfg.REC_COUNT_ALERT == 0 or record_tracker.force_alert:
                 record_tracker.dur_alert = num_records // cfg.REC_COUNT_ALERT * cfg.REC_COUNT_ALERT_CYC

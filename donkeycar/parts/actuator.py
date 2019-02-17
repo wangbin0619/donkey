@@ -21,8 +21,8 @@ class EV3_Controller:
         # Initialise the EV3 module
         global flag
         
-#        self.conn = rpyc.classic.connect('ev3devS1')
-        self.conn = rpyc.classic.connect('192.168.31.30')
+        # It is based on 1) Raspberry Pi and EV3 connected by USB. 2) Set to Tethering + Gadget mode. So EV3 get IP address as 192.168.0.1
+        self.conn = rpyc.classic.connect('192.168.0.1')
 
         self.ev3_motor = self.conn.modules['ev3dev2.motor']
         self.steer_pair = self.ev3_motor.MoveSteering(self.ev3_motor.OUTPUT_B, self.ev3_motor.OUTPUT_C)
