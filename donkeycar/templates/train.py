@@ -557,7 +557,26 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
 
     if cfg.USE_EARLY_STOP and not continuous:
         callbacks_list.append(early_stop)
-    
+
+    # reduce the learning rate if validation error not longer improved
+    '''
+    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                  factor=0.2,
+                                                  patience=patience-2,
+                                                  min_lr=0.001,
+                                                  verbose=verbose,
+                                                  mode='auto')
+    callbacks_list.append(reduce_lr)
+    '''
+
+    tensorboard = keras.callbacks.TensorBoard(log_dir='/home/wangbin/d2/logs',
+                                              histogram_freq=0,
+                                              batch_size=32,
+                                              write_graph=True,
+                                              write_grads=False,
+                                              write_images=True)
+    callbacks_list.append(tensorboard)
+
     history = kl.model.fit_generator(
                     train_gen, 
                     steps_per_epoch=steps_per_epoch, 

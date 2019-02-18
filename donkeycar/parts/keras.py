@@ -74,6 +74,25 @@ class KerasPilot(object):
         if use_early_stop:
             callbacks_list.append(early_stop)
         
+        # reduce the learning rate if validation error not longer improved
+        '''
+        reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss',
+                                                      factor=0.2,
+                                                      patience=patience-2,
+                                                      min_lr=0.001,
+                                                      verbose=verbose,
+                                                      mode='auto')
+        callbacks_list.append(reduce_lr)
+        '''
+
+        tensorboard = keras.callbacks.TensorBoard(log_dir='/home/wangbin/d2/logs',
+                                                  histogram_freq=0,
+                                                  batch_size=32,
+                                                  write_graph=True,
+                                                  write_grads=False,
+                                                  write_images=True)
+        callbacks_list.append(tensorboard)
+
         hist = self.model.fit_generator(
                         train_gen, 
                         steps_per_epoch=steps, 
