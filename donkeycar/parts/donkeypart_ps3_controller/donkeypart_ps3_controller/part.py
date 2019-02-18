@@ -502,7 +502,7 @@ class JoystickController(object):
 
     def set_steering(self, axis_val):
         self.angle = self.steering_scale * axis_val
-        print("angle", self.angle)
+        #print("angle", self.angle)
 
     def set_throttle(self, axis_val):
         # this value is often reversed, with positive value when pulling down
@@ -532,7 +532,8 @@ class JoystickController(object):
             self.throttle = self.throttle_scale
             self.on_throttle_changes()
 
-        print('throttle_scale:', self.throttle_scale)
+        now = datetime.datetime.now().strftime('%H:%M:%S.%f')
+        print(now + 'throttle_scale: {}'.format(self.throttle_scale))
 
     def decrease_max_throttle(self):
         '''
@@ -543,7 +544,8 @@ class JoystickController(object):
             self.throttle = self.throttle_scale
             self.on_throttle_changes()
 
-        print('throttle_scale:', self.throttle_scale)
+        now = datetime.datetime.now().strftime('%H:%M:%S.%f')
+        print(now + 'throttle_scale: {}'.format(self.throttle_scale))
 
     def toggle_constant_throttle(self):
         '''

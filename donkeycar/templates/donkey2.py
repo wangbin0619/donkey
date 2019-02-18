@@ -120,7 +120,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
 #        from donkeycar.parts.controller import PS3JoystickController, PS4JoystickController
-        from donkeycar.parts.donkeypart_ps3_controller.donkeypart_ps3_controller import PS3JoystickController 
+        from donkeycar.parts.donkeypart_ps3_controller.donkeypart_ps3_controller import PS3JoystickController, PS4JoystickController
         
         cont_class = PS3JoystickController
 
