@@ -533,7 +533,7 @@ class JoystickController(object):
             self.on_throttle_changes()
 
         now = datetime.datetime.now().strftime('%H:%M:%S.%f')
-        print(now + 'throttle_scale: {}'.format(self.throttle_scale))
+        print(now, 'throttle_scale: {}'.format(self.throttle_scale))
 
     def decrease_max_throttle(self):
         '''
@@ -545,7 +545,7 @@ class JoystickController(object):
             self.on_throttle_changes()
 
         now = datetime.datetime.now().strftime('%H:%M:%S.%f')
-        print(now + 'throttle_scale: {}'.format(self.throttle_scale))
+        print(now, 'throttle_scale: {}'.format(self.throttle_scale))
 
     def toggle_constant_throttle(self):
         '''
