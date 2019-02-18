@@ -115,14 +115,14 @@ class Joystick(object):
 
             if typev & 0x01:
                 button = self.button_map[number]
-#                print(now, value, number, button, 'pressed')
+                print(now, value, button, 'pressed') # wangbin
                 if button:
                     self.button_states[button] = value
                     button_state = value
 
             if typev & 0x02:
                 axis = self.axis_map[number]
-#                print(now, value / 32767.0, number, axis, 'moved')
+                print(now, value / 32767.0, axis, 'moved') # wangbin
                 if axis:
                     fvalue = value / 32767.0
                     self.axis_states[axis] = fvalue

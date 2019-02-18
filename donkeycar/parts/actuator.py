@@ -38,7 +38,7 @@ class EV3_Controller:
 
     def set_pulse(self, pulse):
         try:
-            tmp = 1
+            pass
             #print ("Bin's update - set_pulse", tmp++)
             #self.pwm.set_pwm(self.channel, 0, pulse)
         except OSError as err:
@@ -46,7 +46,7 @@ class EV3_Controller:
 
     def set_Steering(self, angle):
         try:
-            angle = int(angle * 45)
+            angle = int(angle * 30)
             if angle < 1 and angle > -1 :
                 angle = 0
 
@@ -65,7 +65,7 @@ class EV3_Controller:
 
     def set_Throttle(self, throttle):
         try:
-            throttle = int(throttle * 40)
+            throttle = int(throttle * 60)
 
             if throttle == self.pre_throttle:
                 #print("skip since throttle keep same: throttle {} pre_throttle {}".format(throttle,self.pre_throttle))
@@ -87,11 +87,9 @@ class EV3_Controller:
         # values -a 200 -s 130 SHOULD BE INCLUDED if specifying any other options
         # a = amplitude (200 max, 100 default), s = speed 80-500, default = 175)
 
-        opts = '-a 200 -s 130 -v'
         # str_en = "I think you ought to know, I'm feeling very depressed"
         str_zh = "zhun bei chu fa"
         self.sound.speak(str_zh, espeak_opts='-a 200 -s 130 -zh')
-
 
     def run(self, pulse):
         print ("Bin's update - run")
@@ -240,9 +238,23 @@ class PWMSteering:
         # wangbin
         self.controller.set_Steering(angle)
 
+    def run_threaded(self, angle):
+        '''
+        #map absolute angle to angle that vehicle can implement.
+        pulse = dk.utils.map_range(angle,
+                                self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                self.left_pulse, self.right_pulse)
+
+        self.controller.set_pulse(pulse)
+        '''
+        # wangbin
+        self.controller.set_Steering(angle)
+
+    def update(self):
+        pass
+
     def shutdown(self):
         self.run(0) #set steering straight
-
 
 
 class PWMThrottle:
@@ -272,8 +284,26 @@ class PWMThrottle:
         self.controller.set_pulse(self.zero_pulse)
         time.sleep(1)
 
-
     def run(self, throttle):
+        '''
+        if throttle > 0:
+            pulse = dk.utils.map_range(throttle,
+                                    0, self.MAX_THROTTLE, 
+                                    self.zero_pulse, self.max_pulse)
+        else:
+            pulse = dk.utils.map_range(throttle,
+                                    self.MIN_THROTTLE, 0, 
+                                    self.min_pulse, self.zero_pulse)
+
+        self.controller.set_pulse(pulse)
+        '''
+        # wangbin
+        self.controller.set_Throttle(throttle)
+
+    def update(self):
+        pass
+
+    def run_threaded(self, throttle):
         '''
         if throttle > 0:
             pulse = dk.utils.map_range(throttle,

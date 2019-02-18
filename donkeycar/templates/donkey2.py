@@ -151,8 +151,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
           threaded=True)
 
     #this throttle filter will allow one tap back for esc reverse
-    th_filter = ThrottleFilter()
-    V.add(th_filter, inputs=['user/throttle'], outputs=['user/throttle'])
+    #wangbin should no such need for EV3
+    #th_filter = ThrottleFilter()
+    #V.add(th_filter, inputs=['user/throttle'], outputs=['user/throttle'])
     
     #See if we should even run the pilot module. 
     #This is only needed because the part run_condition only accepts boolean
@@ -407,8 +408,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                                         zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
                                         min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
-        V.add(steering, inputs=['angle'])
-        V.add(throttle, inputs=['throttle'])
+        # wangbin changed to threaded mode with purpose to avoid the latency between PS3 input and throttle control
+        V.add(steering, inputs=['angle'],threaded=True)
+        V.add(throttle, inputs=['throttle'],threaded=True)
     
     elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
         from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
