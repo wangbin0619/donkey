@@ -59,7 +59,7 @@ class Vehicle():
         self.parts.remove(part)
 
 
-    def start(self, rate_hz=10, max_loop_count=None, verbose=False):
+    def start(self, rate_hz=10, max_loop_count=None, verbose=True):
         """
         Start vehicle's main drive loop.
 
@@ -131,6 +131,12 @@ class Vehicle():
                 run = self.mem.get([run_condition])[0]
                 #print('run_condition', entry['part'], entry.get('run_condition'), run)
             
+            import datetime
+
+            p = entry['part']
+            now = datetime.datetime.now().strftime('%H:%M:%S.%f')
+            print(now, 'In part {} : {}.'.format(run, p.__class__.__name__))
+
             if run:
                 p = entry['part']
                 #get inputs from memory
