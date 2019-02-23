@@ -487,7 +487,7 @@ class TubWriter(Tub):
     def __init__(self, *args, **kwargs):
         super(TubWriter, self).__init__(*args, **kwargs)
 
-    def run(self, *args):
+    def run_threaded(self, *args):
         '''
         API function needed to use as a Donkey part.
 
@@ -501,6 +501,8 @@ class TubWriter(Tub):
         self.put_record(record)
         return self.current_ix
 
+    def update(self):
+        pass
 
 class TubReader(Tub):
     def __init__(self, path, *args, **kwargs):

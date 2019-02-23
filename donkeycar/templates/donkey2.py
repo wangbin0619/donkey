@@ -119,8 +119,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
-#        from donkeycar.parts.controller import PS3JoystickController, PS4JoystickController
-        from donkeycar.parts.donkeypart_ps3_controller.donkeypart_ps3_controller import PS3JoystickController, PS4JoystickController
+        from donkeycar.parts.controller import PS4JoystickController
+        from donkeycar.parts.donkeypart_ps3_controller.donkeypart_ps3_controller import PS3JoystickController
         
         cont_class = PS3JoystickController
 
@@ -480,7 +480,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     
     th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
-    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording', threaded=True)
 
     if cfg.PUB_CAMERA_IMAGES:
         from donkeycar.parts.network import TCPServeValue
