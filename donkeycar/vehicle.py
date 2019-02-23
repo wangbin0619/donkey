@@ -60,7 +60,7 @@ class Vehicle():
 
 
     def start(self, rate_hz=5, max_loop_count=None, verbose=True):
-        """
+        """ 
         Start vehicle's main drive loop.
 
         This is the main thread of the vehicle. It starts all the new
