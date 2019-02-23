@@ -59,7 +59,7 @@ class Vehicle():
         self.parts.remove(part)
 
 
-    def start(self, rate_hz=10, max_loop_count=None, verbose=True):
+    def start(self, rate_hz=5, max_loop_count=None, verbose=True):
         """
         Start vehicle's main drive loop.
 
