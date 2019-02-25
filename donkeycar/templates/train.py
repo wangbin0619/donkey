@@ -577,6 +577,8 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                                               write_images=True)
     callbacks_list.append(tensorboard)
 
+    print("Geberate TensorBoard log in /home/wangbin/d2/logs")
+
     history = kl.model.fit_generator(
                     train_gen, 
                     steps_per_epoch=steps_per_epoch, 
