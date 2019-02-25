@@ -551,6 +551,7 @@ class TubHandler():
 
     def new_tub_writer(self, inputs, types):
         tub_path = self.create_tub_path()
+        print('new tub')
         tw = TubWriter(path=tub_path, inputs=inputs, types=types)
         return tw
 

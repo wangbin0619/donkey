@@ -491,7 +491,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     if type(ctr) is LocalWebController:
         print("You can now go to <your pi ip address>:8887 to drive your car.")
-    elif isinstance(ctr, JoystickController):
+#    elif isinstance(ctr, JoystickController): wangbin
+    elif isinstance(ctr, PS3JoystickController):
         print("You can now move your joystick to drive your car.")
         #tell the controller about the tub        
         ctr.set_tub(tub)
@@ -503,7 +504,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
                 ctr.set_tub(tub)
     
-            ctr.set_button_down_trigger('cross', new_tub_dir)
+            ctr.set_button_down_trigger('start', new_tub_dir)
 
     #run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 

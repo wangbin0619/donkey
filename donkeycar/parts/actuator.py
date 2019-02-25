@@ -46,7 +46,7 @@ class EV3_Controller:
 
     def set_Steering(self, angle):
         try:
-            angle = int(angle * 30)
+            angle = int(angle * 20)
             if angle < 1 and angle > -1 :
                 angle = 0
 

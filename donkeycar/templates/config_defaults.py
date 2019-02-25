@@ -102,7 +102,7 @@ NUM_LAST_LAYERS_TO_TRAIN = 7
 
 #JOYSTICK
 USE_JOYSTICK_AS_DEFAULT = False
-JOYSTICK_MAX_THROTTLE = 0.3
+JOYSTICK_MAX_THROTTLE = 0.5
 JOYSTICK_STEERING_SCALE = 1.0
 AUTO_RECORD_ON_THROTTLE = True
 CONTROLLER_TYPE='ps3'           #(ps3|ps4)
@@ -165,7 +165,7 @@ BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
 BEHAVIOR_LED_COLORS =[ (0, 10, 0), (10, 0, 0) ] #RGB tuples 0-100 per chanel
 
 TRAIN_LOCALIZER = False
-BUTTON_PRESS_NEW_TUB = False #should we make a new tub on each X button press?
+BUTTON_PRESS_NEW_TUB = True #should we make a new tub on each X button press?
 
 #in donkey gym env?
 DONKEY_GYM = False

@@ -115,14 +115,14 @@ class Joystick(object):
 
             if typev & 0x01:
                 button = self.button_map[number]
-                print(now, value, button, 'pressed') # wangbin
+                #print(now, value, button, 'pressed') # wangbin
                 if button:
                     self.button_states[button] = value
                     button_state = value
 
             if typev & 0x02:
                 axis = self.axis_map[number]
-                print(now, value / 32767.0, axis, 'moved') # wangbin
+                #print(now, value / 32767.0, axis, 'moved') # wangbin
                 if axis:
                     fvalue = value / 32767.0
                     self.axis_states[axis] = fvalue
@@ -612,7 +612,8 @@ class JoystickController(object):
                 return 0.0, self.throttle, self.mode, False
 
         if self.chaos_monkey_steering is not None:
-            return self.chaos_monkey_steering, self.throttle, self.mode, False
+#            return self.chaos_monkey_steering, self.throttle, self.mode, False
+            return self.chaos_monkey_steering, self.throttle, self.mode, self.recording
 
         return self.angle, self.throttle, self.mode, self.recording
 

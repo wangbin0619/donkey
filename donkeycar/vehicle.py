@@ -105,13 +105,14 @@ class Vehicle():
                 if max_loop_count and loop_count > max_loop_count:
                     self.on = False
 
-                sleep_time = 1.0 / rate_hz - (time.time() - start_time)
+                delay = (time.time() - start_time)
+                sleep_time = 1.0 / rate_hz - delay
                 if sleep_time > 0.0:
                     time.sleep(sleep_time)
                 else:
                     # print a message when could not maintain loop rate.
                     if verbose:
-                        print('WARN::Vehicle: jitter violation in vehicle loop with value:', abs(sleep_time))
+                        print('WARN::Vehicle: jitter violation in vehicle loop with value:', abs(sleep_time),delay)
 
         except KeyboardInterrupt:
             pass
@@ -134,8 +135,8 @@ class Vehicle():
             import datetime
 
             p = entry['part']
-            now = datetime.datetime.now().strftime('%H:%M:%S.%f')
-            print(now, 'In part {} : {}.'.format(run, p.__class__.__name__))
+            #now = datetime.datetime.now().strftime('%H:%M:%S.%f')
+            #print(now, 'In part {} : {}.'.format(run, p.__class__.__name__))
 
             if run:
                 p = entry['part']
