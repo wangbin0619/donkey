@@ -501,7 +501,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             def new_tub_dir():
                 V.parts.pop()
                 tub = th.new_tub_writer(inputs=inputs, types=types)
-                V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+                V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording', threaded=True)
                 ctr.set_tub(tub)
     
             ctr.set_button_down_trigger('start', new_tub_dir)
