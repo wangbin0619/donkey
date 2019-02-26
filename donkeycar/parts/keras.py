@@ -115,7 +115,7 @@ class KerasCategorical(KerasPilot):
         self.model.compile(optimizer=self.optimizer, metrics=['acc'],
                   loss={'angle_out': 'categorical_crossentropy', 
                         'throttle_out': 'categorical_crossentropy'},
-                  loss_weights={'angle_out': 0.5, 'throttle_out': 1.0})
+                  loss_weights={'angle_out': 0.8, 'throttle_out': 0.2})
         
     def run(self, img_arr):
         if img_arr is None:
@@ -303,9 +303,11 @@ def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
     x = Dense(50, activation='relu', name="fc_2")(x)                                     # Classify the data into 50 features, make all negatives 0
     x = Dropout(drop)(x)                                                      # Randomly drop out 10% of the neurons (Prevent overfitting)
     #categorical output of the angle
+    #wangbin
     angle_out = Dense(15, activation='softmax', name='angle_out')(x)        # Connect every input with every output and output 15 hidden units. Use Softmax to give percentage. 15 categories and find best one based off percentage 0.0-1.0
-    
+   
     #continous output of throttle
+    #wangbin
     throttle_out = Dense(20, activation='softmax', name='throttle_out')(x)      # Reduce to 1 number, Positive number only
     
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
