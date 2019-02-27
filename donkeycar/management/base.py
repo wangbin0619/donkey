@@ -726,7 +726,7 @@ class ShowPredictionPlots(BaseCommand):
         file_names = []
         diff_angles = []
         diff_throttles = []
-
+        
         records = records[:int(limit)]
         num_records = len(records)
         print('processing %d records:' % num_records)
