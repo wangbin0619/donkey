@@ -115,7 +115,7 @@ class KerasCategorical(KerasPilot):
         self.model.compile(optimizer=self.optimizer, metrics=['acc'],
                   loss={'angle_out': 'categorical_crossentropy', 
                         'throttle_out': 'categorical_crossentropy'},
-                  loss_weights={'angle_out': 0.8, 'throttle_out': 0.2})
+                  loss_weights={'angle_out': 0.9, 'throttle_out': 0.1})
         
     def run(self, img_arr):
         if img_arr is None:

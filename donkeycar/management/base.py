@@ -692,6 +692,19 @@ class ShowCnnActivations(BaseCommand):
 
 class ShowPredictionPlots(BaseCommand):
 
+    def csv_dump(self, model_path,filename_df,angles_df,throttles_df):
+        
+        import pandas as pd
+
+        df_list1=[filename_df, angles_df, throttles_df]
+        record_df = pd.concat(df_list1, axis=1)
+        
+        target_file = model_path+'_detail.csv'
+        with open(target_file,'w') as f:
+            record_df.to_csv(path_or_buf=f)
+            print('Generated detail in file:',target_file)
+                
+    
     def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
         '''
         Plot model predictions for angle and throttle against data from tubs.
@@ -708,9 +721,13 @@ class ShowPredictionPlots(BaseCommand):
         user_angles = []
         user_throttles = []
         pilot_angles = []
-        pilot_throttles = []       
+        pilot_throttles = []
+        
+        file_names = []
+        diff_angles = []
+        diff_throttles = []
 
-        records = records[:limit]
+        records = records[:int(limit)]
         num_records = len(records)
         print('processing %d records:' % num_records)
 
@@ -728,8 +745,16 @@ class ShowPredictionPlots(BaseCommand):
             pilot_angles.append(pilot_angle)
             pilot_throttles.append(pilot_throttle)
 
-        angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
-        throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
+            file_names.append(img_filename)
+            diff_angles.append(pilot_angle - user_angle)
+            diff_throttles.append(pilot_throttle - user_throttle)
+
+        filename_df = pd.DataFrame({'finename': file_names})
+
+        angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles,'diff_angle': diff_angles})
+        throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles, 'diff_throttle': diff_throttles})
+
+        self.csv_dump(model_path, filename_df, angles_df, throttles_df)
 
         fig = plt.figure()
 
