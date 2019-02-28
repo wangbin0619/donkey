@@ -256,12 +256,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             record_tracker.force_alert = 1
         ctr.set_button_down_trigger('circle', show_record_acount_status)
 
-    #IMU
-    if cfg.HAVE_IMU:
-        imu = Mpu6050()
-        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
-
     #Behavioral state
     if cfg.TRAIN_BEHAVIORS:
         bh = BehaviorPart(cfg.BEHAVIOR_LIST)
@@ -452,6 +446,15 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         V.add(steering, inputs=['angle'])
         V.add(motor, inputs=["throttle"])
+    
+    #IMU
+    if cfg.HAVE_IMU:
+        #wangbin using EV3 Gyro sensor instead of pure IMU
+        #it use same EV3 instance sharing with steering and throttling
+        #imu = Mpu6050()
+        imu = steering_controller
+        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
+            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
     
     #add tub to save data
 

@@ -27,9 +27,15 @@ class EV3_Controller:
         self.ev3_motor = self.conn.modules['ev3dev2.motor']
         self.steer_pair = self.ev3_motor.MoveSteering(self.ev3_motor.OUTPUT_B, self.ev3_motor.OUTPUT_C)
 
-        self.ev3_sound = self.conn.modules['ev3dev2.sound']
-        self.sound = self.ev3_sound.Sound()
-
+        #self.ev3_sound = self.conn.modules['ev3dev2.sound']
+        #self.sound = self.ev3_sound.Sound()
+        
+        self.ev3_gyro = self.conn.modules['ev3dev2.sensor.lego']
+        self.gyro = self.ev3_gyro.GyroSensor()
+        
+        self.data_accel = { 'x' : 0., 'y' : 0., 'z' : 0. }
+        self.data_gyro = { 'x' : 0., 'y' : 0., 'z' : 0. }
+        
         print ("Initialise the EV3 module")
 
         self.pre_angle = 0
@@ -81,6 +87,7 @@ class EV3_Controller:
         except OSError as err:
             print("Unexpected issue setting Throttle EV3 (check wires to motor board): {0}".format(err))
 
+    '''
     def start_sound(self):
 
         # see http://espeak.sourceforge.net/
@@ -90,10 +97,36 @@ class EV3_Controller:
         # str_en = "I think you ought to know, I'm feeling very depressed"
         str_zh = "zhun bei chu fa"
         self.sound.speak(str_zh, espeak_opts='-a 200 -s 130 -zh')
+    '''
+
+    def get_gyro(self):
+        try:
+            #self.gyro.angle
+            #self.gyro.rate 
+            #self.gyro.angle_and_rate
+            now = datetime.datetime.now().strftime('%H:%M:%S.%f')
+            print(now + " Ev3 Gyro - Angle: {:+3d} Rate: {:+3d}".format(self.gyro.angle, self.gyro.rate))
+#            print(now + " Ev3 Gyro - Angle_and_rate: ", self.gyro.rate_and_angle)
+
+        except OSError as err:
+            print("Unexpected issue getting Gyro (check wires to motor board): {0}".format(err))
+
+        return (self.data_accel['x'], self.data_accel['y'], self.data_accel['z'], 
+                self.data_gyro['x'], self.data_gyro['y'], self.data_gyro['z'])
+
+    def run_threaded(self):
+        # it is for getting EV3 gyro info instead of instead of throttle/angle control
+        return (self.data_accel['x'], self.data_accel['y'], self.data_accel['z'], 
+                self.data_gyro['x'], self.data_gyro['y'], self.data_gyro['z'])        
+
+#        return self.get_gyro()
 
     def run(self, pulse):
         print ("Bin's update - run")
         #self.set_pulse(pulse)
+
+    def update(self):
+        pass
 
 class PCA9685:
     ''' 
