@@ -99,7 +99,7 @@ class Vehicle():
                 start_time = time.time()
                 loop_count += 1
 
-                self.update_parts()
+                list_performance = self.update_parts(rate_hz)
 
                 #stop drive loop if loop_count exceeds max_loopcount
                 if max_loop_count and loop_count > max_loop_count:
@@ -112,7 +112,16 @@ class Vehicle():
                 else:
                     # print a message when could not maintain loop rate.
                     if verbose:
-                        print('WARN::Vehicle: jitter violation in vehicle loop with value:', abs(sleep_time),delay)
+
+                        import datetime
+                        now = datetime.datetime.now().strftime('%H:%M:%S.%f')
+
+                        print(now, 'WARN::Vehicle: jitter violation in vehicle loop : Delay : {:3.5f} Delta: {:3.5f}'.format(delay, sleep_time))
+#                        print('{0[0]} {0[1]:3.5f} {0[1]:3.5f}'.format(list_performance[:3]))
+                        print(now,end=' ')
+                        for i in range(3):
+                            print('[{}][{} {:3.5f} {:3.5f}] '.format(i,list_performance[i][0],list_performance[i][1],list_performance[i][2]), end='')
+                        print('')
 
         except KeyboardInterrupt:
             pass
@@ -120,11 +129,16 @@ class Vehicle():
             self.stop()
 
 
-    def update_parts(self):
+    def update_parts(self,rate_hz):
         '''
         loop over all parts
         '''
+        list_performance = []
+
         for entry in self.parts:
+
+            start_time = time.time()
+
             #don't run if there is a run condition that is False
             run = True
             if entry.get('run_condition'):
@@ -132,12 +146,6 @@ class Vehicle():
                 run = self.mem.get([run_condition])[0]
                 #print('run_condition', entry['part'], entry.get('run_condition'), run)
             
-            import datetime
-
-            p = entry['part']
-            #now = datetime.datetime.now().strftime('%H:%M:%S.%f')
-            #print(now, 'In part {} : {}.'.format(run, p.__class__.__name__))
-
             if run:
                 p = entry['part']
                 #get inputs from memory
@@ -153,6 +161,23 @@ class Vehicle():
                 if outputs is not None:
                     self.mem.put(entry['outputs'], outputs)
 
+                #check the performance of each step
+                delay = (time.time() - start_time)
+                delta_time = 1.0 / rate_hz - delay
+
+                '''
+                if 5 * delta_time < 0.0:
+
+                    import datetime
+                    now = datetime.datetime.now().strftime('%H:%M:%S.%f')
+                    print(now, 'In part {} : Delay: {:3.5f} Delta: {:3.5f}'.format(p.__class__.__name__, delay, delta_time))
+                '''
+                list_performance.append([p.__class__.__name__, delay, delta_time])
+        
+        def takeSecond(elem):
+            return elem[1]
+        list_performance.sort(key=takeSecond,reverse=True)
+        return list_performance
                     
 
     def stop(self):
