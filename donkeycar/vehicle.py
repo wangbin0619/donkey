@@ -117,7 +117,6 @@ class Vehicle():
                         now = datetime.datetime.now().strftime('%H:%M:%S.%f')
 
                         print(now, 'WARN::Vehicle: jitter violation in vehicle loop : Delay : {:3.5f} Delta: {:3.5f}'.format(delay, sleep_time))
-#                        print('{0[0]} {0[1]:3.5f} {0[1]:3.5f}'.format(list_performance[:3]))
                         print(now,end=' ')
                         for i in range(3):
                             print('[{}][{} {:3.5f} {:3.5f}] '.format(i,list_performance[i][0],list_performance[i][1],list_performance[i][2]), end='')
