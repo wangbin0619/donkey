@@ -23,6 +23,7 @@ class EV3_Controller:
         
         # It is based on 1) Raspberry Pi and EV3 connected by USB. 2) Set to Tethering + Gadget mode. So EV3 get IP address as 192.168.0.1
         self.conn = rpyc.classic.connect('192.168.0.1')
+        #self.conn = rpyc.classic.connect('192.168.31.30')
 
         self.ev3_motor = self.conn.modules['ev3dev2.motor']
         self.steer_pair = self.ev3_motor.MoveSteering(self.ev3_motor.OUTPUT_B, self.ev3_motor.OUTPUT_C)
@@ -30,12 +31,14 @@ class EV3_Controller:
         #self.ev3_sound = self.conn.modules['ev3dev2.sound']
         #self.sound = self.ev3_sound.Sound()
         
-        self.ev3_gyro = self.conn.modules['ev3dev2.sensor.lego']
-        self.gyro = self.ev3_gyro.GyroSensor()
+        self.ev3_sensor = self.conn.modules['ev3dev2.sensor.lego']
+        #self.ev3_sensor_port = self.conn.modules['ev3dev2.sensor']         
+        self.gyro = self.ev3_sensor.GyroSensor()
+        self.color = self.ev3_sensor.ColorSensor()
         
-        self.data_accel = { 'x' : 0., 'y' : 0., 'z' : 0. }
-        self.data_gyro = { 'x' : 0., 'y' : 0., 'z' : 0. }
-        
+        self.sensor_data_accel = { 'x' : 0., 'y' : 0., 'z' : 0. }
+        self.sensor_data_gyro = { 'x' : 0., 'y' : 0., 'z' : 0. }
+
         print ("Initialise the EV3 module")
 
         self.pre_angle = 0
@@ -99,27 +102,26 @@ class EV3_Controller:
         self.sound.speak(str_zh, espeak_opts='-a 200 -s 130 -zh')
     '''
 
-    def get_gyro(self):
+    def get_sensor_data(self):
         try:
-            #self.gyro.angle
-            #self.gyro.rate 
-            #self.gyro.angle_and_rate
+            self.sensor_data_accel['x'] = self.color.reflected_light_intensity
+            self.sensor_data_gyro['x'] = self.gyro.angle
+            self.sensor_data_gyro['y'] = self.gyro.rate
+            '''
             now = datetime.datetime.now().strftime('%H:%M:%S.%f')
-            print(now + " Ev3 Gyro - Angle: {:+3d} Rate: {:+3d}".format(self.gyro.angle, self.gyro.rate))
-#            print(now + " Ev3 Gyro - Angle_and_rate: ", self.gyro.rate_and_angle)
+            print(now + " Ev3 Sensor - Color: {:+3d} Gyro Angle: {:+3d} Gyro Rate: {:+3d}".
+                format(self.color.reflected_light_intensity, self.gyro.angle, self.gyro.rate))
+            '''
 
         except OSError as err:
             print("Unexpected issue getting Gyro (check wires to motor board): {0}".format(err))
 
-        return (self.data_accel['x'], self.data_accel['y'], self.data_accel['z'], 
-                self.data_gyro['x'], self.data_gyro['y'], self.data_gyro['z'])
+        return (self.sensor_data_accel['x'], self.sensor_data_accel['y'], self.sensor_data_accel['z'], 
+                self.sensor_data_gyro['x'], self.sensor_data_gyro['y'], self.sensor_data_gyro['z'])
 
     def run_threaded(self):
         # it is for getting EV3 gyro info instead of instead of throttle/angle control
-        return (self.data_accel['x'], self.data_accel['y'], self.data_accel['z'], 
-                self.data_gyro['x'], self.data_gyro['y'], self.data_gyro['z'])        
-
-#        return self.get_gyro()
+        return self.get_sensor_data()
 
     def run(self, pulse):
         print ("Bin's update - run")
