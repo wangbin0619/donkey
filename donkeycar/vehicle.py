@@ -150,6 +150,9 @@ class Vehicle():
                 #get inputs from memory
                 inputs = self.mem.get(entry['inputs'])
 
+                #print(p.__class__.__name__)
+                #print(inputs)
+
                 #run the part
                 if entry.get('thread'):
                     outputs = p.run_threaded(*inputs)

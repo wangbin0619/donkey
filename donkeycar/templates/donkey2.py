@@ -115,6 +115,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
             
         V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
+
+        time.sleep(5)
         
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
@@ -370,7 +372,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         imu = ev3_controller
         V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z',
-            'user/angle', 'user/throttle'], threaded=True)
+            'user/angle', 'user/throttle',
+            'recording'], threaded=True)
 
     #Choose what inputs should change the car.
     def drive_mode(mode, 
@@ -479,14 +482,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
         types += ['int', 'str', 'vector']
-    
+        
     if cfg.HAVE_IMU:
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
 
         types +=['float', 'float', 'float',
            'float', 'float', 'float']
-
+    
     if cfg.RECORD_DURING_AI:
         inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']

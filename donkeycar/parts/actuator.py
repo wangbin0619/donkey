@@ -27,6 +27,7 @@ class EV3_Controller:
 
         self.ev3_motor = self.conn.modules['ev3dev2.motor']
         self.steer_pair = self.ev3_motor.MoveSteering(self.ev3_motor.OUTPUT_B, self.ev3_motor.OUTPUT_C)
+        self.async_steer_pair_on = rpyc.async(self.steer_pair.on)
 
         #self.ev3_sound = self.conn.modules['ev3dev2.sound']
         #self.sound = self.ev3_sound.Sound()
@@ -34,7 +35,10 @@ class EV3_Controller:
         self.ev3_sensor = self.conn.modules['ev3dev2.sensor.lego']
         #self.ev3_sensor_port = self.conn.modules['ev3dev2.sensor']         
         self.gyro = self.ev3_sensor.GyroSensor()
+        #self.gyro.mode = 'GYRO-ANG'
+
         self.color = self.ev3_sensor.ColorSensor()
+        self.color.mode = 'COL-REFLECT'
         
         self.sensor_data_accel = { 'x' : 0., 'y' : 0., 'z' : 0. }
         self.sensor_data_gyro = { 'x' : 0., 'y' : 0., 'z' : 0. }
@@ -42,6 +46,7 @@ class EV3_Controller:
 
         print ("Initialise the EV3 module")
 
+        self.camera_warmup_loop = 0 #the camera can not be ready in first few loop so we wait for 20 loops
         self.pre_angle = 0
         self.pre_throttle = 0
         self.steer_pair.on(steering=self.pre_angle, speed=self.pre_throttle)
@@ -68,7 +73,8 @@ class EV3_Controller:
 
             now = datetime.datetime.now().strftime('%H:%M:%S.%f')
             print(now + " Ev3 Steering <<< >>> Angle: {:+3d} Throrrle: {:+3d}".format(angle,self.pre_throttle))
-            self.steer_pair.on(steering=angle,speed=self.pre_throttle)
+            #self.steer_pair.on(steering=angle,speed=self.pre_throttle)
+            self.async_steer_pair_on(steering=angle,speed=self.pre_throttle)
 
         except OSError as err:
             print("Unexpected issue setting Steering (check wires to motor board): {0}".format(err))
@@ -85,8 +91,8 @@ class EV3_Controller:
 
             now = datetime.datetime.now().strftime('%H:%M:%S.%f')
             print(now + " Ev3 Throttle ^^^ vvv Throttle: {:+3d} Angle: {:+3d} ".format(throttle,self.pre_angle))
-            self.steer_pair.on(steering=self.pre_angle,speed=throttle)
-            # time.sleep(0.5)
+            #self.steer_pair.on(steering=self.pre_angle,speed=throttle)
+            self.async_steer_pair_on(steering=self.pre_angle,speed=throttle)
 
         except OSError as err:
             print("Unexpected issue setting Throttle EV3 (check wires to motor board): {0}".format(err))
@@ -104,13 +110,21 @@ class EV3_Controller:
     '''
     def PID(self, color_input):
 
-        throttle = 0.5
+        throttle = 0.3
         angle = 0.
-        average = 25.
-        Kp = 0.6
+        average = 18.
+        black = 12.
+        white = 39.
 
-        turn = color_input - average
-        angle = turn * Kp
+        Kp = 2
+
+        turn = average - color_input
+
+        if turn < 0 : # white
+            angle = turn / (white - average) * Kp
+        else: # black
+            angle = turn / (average - black) * Kp
+
         if angle < -1.0:
             angle = -1.0
         if angle > 1.0:
@@ -121,21 +135,31 @@ class EV3_Controller:
     def get_sensor_and_PID_data(self):
         try:
             self.sensor_data_accel['x'] = self.color.reflected_light_intensity
-            self.sensor_data_gyro['x'] = self.gyro.angle
-            self.sensor_data_gyro['y'] = self.gyro.rate
+            #Disable gyro sensor data query to reduce the latency
+            #self.sensor_data_gyro['x'] = self.gyro.rate_and_angle[0]
+            #self.sensor_data_gyro['y'] = self.gyro.rate_and_angle[1]
             self.PID_data['angle'], self.PID_data['throttle'] = self.PID(self.color.reflected_light_intensity)
             
+            '''
             now = datetime.datetime.now().strftime('%H:%M:%S.%f')
-            print(now + " EV3 Color: {:+3d} Gyro Angle: {:+3d} Gyro Rate: {:+3d} PID Angle: {:+.2f} Throttle: {:+.2f}".
+            print(now + " EV3 Color: {:+3.1f} Gyro Angle: {:+3.1f} Gyro Rate: {:+3.1f} PID Angle: {:+.2f} Throttle: {:+.2f}".
                 format(self.sensor_data_accel['x'], self.sensor_data_gyro['x'], self.sensor_data_gyro['y'],
                 self.PID_data['angle'], self.PID_data['throttle']))
-
+            '''
         except OSError as err:
             print("Unexpected issue getting Gyro (check wires to motor board): {0}".format(err))
 
+        #the camera can not be ready in first few loop so we wait for 20 loops
+        if self.camera_warmup_loop >= 20:
+            recording = True
+        else:
+            self.camera_warmup_loop +=1
+            recording = False
+
         return (self.sensor_data_accel['x'], self.sensor_data_accel['y'], self.sensor_data_accel['z'], 
                 self.sensor_data_gyro['x'], self.sensor_data_gyro['y'], self.sensor_data_gyro['z'],
-                self.PID_data['angle'], self.PID_data['throttle'])
+                self.PID_data['angle'], self.PID_data['throttle'],
+                recording)
 
     def run_threaded(self):
         # it is for getting EV3 gyro info instead of instead of throttle/angle control
