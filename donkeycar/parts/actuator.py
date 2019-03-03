@@ -38,6 +38,7 @@ class EV3_Controller:
         
         self.sensor_data_accel = { 'x' : 0., 'y' : 0., 'z' : 0. }
         self.sensor_data_gyro = { 'x' : 0., 'y' : 0., 'z' : 0. }
+        self.PID_data = {'angle':0. ,'throttle':0.}
 
         print ("Initialise the EV3 module")
 
@@ -101,27 +102,44 @@ class EV3_Controller:
         str_zh = "zhun bei chu fa"
         self.sound.speak(str_zh, espeak_opts='-a 200 -s 130 -zh')
     '''
+    def PID(self, color_input):
 
-    def get_sensor_data(self):
+        throttle = 0.5
+        angle = 0.
+        average = 25.
+        Kp = 0.6
+
+        turn = color_input - average
+        angle = turn * Kp
+        if angle < -1.0:
+            angle = -1.0
+        if angle > 1.0:
+            angle = 1.0
+
+        return angle, throttle
+
+    def get_sensor_and_PID_data(self):
         try:
             self.sensor_data_accel['x'] = self.color.reflected_light_intensity
             self.sensor_data_gyro['x'] = self.gyro.angle
             self.sensor_data_gyro['y'] = self.gyro.rate
-            '''
+            self.PID_data['angle'], self.PID_data['throttle'] = self.PID(self.color.reflected_light_intensity)
+            
             now = datetime.datetime.now().strftime('%H:%M:%S.%f')
-            print(now + " Ev3 Sensor - Color: {:+3d} Gyro Angle: {:+3d} Gyro Rate: {:+3d}".
-                format(self.color.reflected_light_intensity, self.gyro.angle, self.gyro.rate))
-            '''
+            print(now + " EV3 Color: {:+3d} Gyro Angle: {:+3d} Gyro Rate: {:+3d} PID Angle: {:+.2f} Throttle: {:+.2f}".
+                format(self.sensor_data_accel['x'], self.sensor_data_gyro['x'], self.sensor_data_gyro['y'],
+                self.PID_data['angle'], self.PID_data['throttle']))
 
         except OSError as err:
             print("Unexpected issue getting Gyro (check wires to motor board): {0}".format(err))
 
         return (self.sensor_data_accel['x'], self.sensor_data_accel['y'], self.sensor_data_accel['z'], 
-                self.sensor_data_gyro['x'], self.sensor_data_gyro['y'], self.sensor_data_gyro['z'])
+                self.sensor_data_gyro['x'], self.sensor_data_gyro['y'], self.sensor_data_gyro['z'],
+                self.PID_data['angle'], self.PID_data['throttle'])
 
     def run_threaded(self):
         # it is for getting EV3 gyro info instead of instead of throttle/angle control
-        return self.get_sensor_data()
+        return self.get_sensor_and_PID_data()
 
     def run(self, pulse):
         print ("Bin's update - run")

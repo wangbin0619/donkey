@@ -349,27 +349,46 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(kl, inputs=inputs, 
             outputs=outputs,
             run_condition='run_pilot')            
-    
+
+    # Added for all EV3 related controller
+    from donkeycar.parts.actuator import EV3_Controller
+    ev3_controller = EV3_Controller()
+
+    #IMU
+    if cfg.HAVE_IMU:
+        '''
+        wangbin using EV3 Gyro sensor and color with PID follow line instead of pure IMU
+        it use same EV3 instance sharing with steering and throttling
+        imu/acl_x -> ev3 color sensor value
+        imu/acl_y -> NOT used
+        imu/acl_z -> NOT used
+        imu/gyr_x -> ev3 gyro angle
+        imu/gyr_y -> ev3 gyro rate
+        imu/gyr_z -> NOT used
+        '''
+        #imu = Mpu6050()
+        imu = ev3_controller
+        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
+            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z',
+            'user/angle', 'user/throttle'], threaded=True)
+
     #Choose what inputs should change the car.
     def drive_mode(mode, 
                    user_angle, user_throttle,
                    pilot_angle, pilot_throttle):
         if mode == 'user': 
             return user_angle, user_throttle
-        
         elif mode == 'local_angle':
             return pilot_angle, user_throttle
-        
-        else: 
+        else: # local pilot
             return pilot_angle, pilot_throttle
-        
+
     drive_mode_part = Lambda(drive_mode)
 
     V.add(drive_mode_part, 
           inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'], 
+                  'pilot/angle', 'pilot/throttle'],
           outputs=['angle', 'throttle'])
-
 
     #Ai Recording
     def ai_recording(mode, recording):
@@ -385,18 +404,17 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         pass
 
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
-        #from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-        from donkeycar.parts.actuator import EV3_Controller, PCA9685, PWMSteering, PWMThrottle
+        from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
         #steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        steering_controller = EV3_Controller()
+        steering_controller = ev3_controller
         steering = PWMSteering(controller=steering_controller,
                                         left_pulse=cfg.STEERING_LEFT_PWM, 
                                         right_pulse=cfg.STEERING_RIGHT_PWM)
         
         #throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
         #throttle_controller = EV3_Controller()
-        throttle_controller = steering_controller # Steering and throttle use same controller considering EV3 movesteering API definition
+        throttle_controller = ev3_controller # Steering and throttle use same controller considering EV3 movesteering API definition
         throttle = PWMThrottle(controller=throttle_controller,
                                         max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                         zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
@@ -447,15 +465,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(steering, inputs=['angle'])
         V.add(motor, inputs=["throttle"])
     
-    #IMU
-    if cfg.HAVE_IMU:
-        #wangbin using EV3 Gyro sensor instead of pure IMU
-        #it use same EV3 instance sharing with steering and throttling
-        #imu = Mpu6050()
-        imu = steering_controller
-        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
-    
+   
     #add tub to save data
 
     inputs=['cam/image_array',
