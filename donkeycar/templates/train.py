@@ -306,7 +306,6 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     saves the output trained model as model_name
     ''' 
     verbose = cfg.VEBOSE_TRAIN
-
     
     if continuous:
         print("continuous training")
