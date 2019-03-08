@@ -590,7 +590,9 @@ def rnn_lstm(seq_length=3, num_outputs=2, image_shape=(120,160,3)):
 class Keras3D_CNN(KerasPilot):
     def __init__(self, image_w =160, image_h=120, image_d=3, seq_length=20, num_outputs=2, *args, **kwargs):
         super(Keras3D_CNN, self).__init__(*args, **kwargs)
+        #wangbin
         self.model = build_3d_cnn(w=image_w, h=image_h, d=image_d, s=seq_length, num_outputs=num_outputs)
+        #self.model = build_3d_categorical_cnn(w=image_w, h=image_h, d=image_d, s=seq_length, num_outputs=num_outputs)
         self.seq_length = seq_length
         self.image_d = image_d
         self.image_w = image_w
@@ -600,6 +602,12 @@ class Keras3D_CNN(KerasPilot):
 
     def compile(self):
         self.model.compile(loss='mean_squared_error', optimizer=self.optimizer, metrics=['accuracy'])
+        '''
+        self.model.compile(optimizer=self.optimizer, metrics=['acc'],
+                  loss={'angle_out': 'categorical_crossentropy', 
+                        'throttle_out': 'categorical_crossentropy'},
+                  loss_weights={'angle_out': 0.9, 'throttle_out': 0.1})
+        '''
 
     def run(self, img_arr):
 
@@ -618,6 +626,86 @@ class Keras3D_CNN(KerasPilot):
         throttle = outputs[0][1]
         return steering, throttle
 
+def build_3d_categorical_cnn(w, h, d, s):
+    from keras.layers import Input, Dense
+    from keras.models import Sequential
+    from keras.models import Model
+    from keras.layers import Conv3D, MaxPooling3D, Reshape, BatchNormalization
+    from keras.layers import Activation, Dropout, Flatten, Cropping3D
+
+    drop = 0.5
+
+    input_shape=(s, h, w, d)
+    img_in = Input(shape=input_shape, name='img_in')         
+
+    x = img_in
+    x = Cropping3D(cropping=((0,0), (50,10), (0,0)))(x) #trim pixels off top
+    
+    # Second layer
+    x = Conv3D(
+        filters=16, kernel_size=(3,3,3), strides=(1,3,3),
+        data_format='channels_last', padding='same',
+        activation='relu')(x)
+    
+    #model.add(Activation('relu'))
+    x = MaxPooling3D(
+        pool_size=(1,2,2), strides=(1,2,2), padding='valid', data_format=None)(x)
+
+    # Third layer
+    x = Conv3D(
+        filters=32, kernel_size=(3,3,3), strides=(1,1,1),
+        data_format='channels_last', padding='same',
+        activation='relu')(x)
+
+#    model.add(Activation('relu'))
+    x = MaxPooling3D(
+        pool_size=(1,2,2), strides=(1,2,2), padding='valid', data_format=None)(x)
+
+    # Fourth layer
+    x = Conv3D(
+        filters=64, kernel_size=(3,3,3), strides=(1,1,1),
+        data_format='channels_last', padding='same',
+        activation='relu')(x)
+
+#    model.add(Activation('relu'))
+    x = MaxPooling3D(
+        pool_size=(1,2,2), strides=(1,2,2), padding='valid', data_format=None)(x)
+
+    # Fifth layer
+    x = Conv3D(
+        filters=128, kernel_size=(3,3,3), strides=(1,1,1),
+        data_format='channels_last', padding='same',
+        activation='relu')(x)
+
+#    model.add(Activation('relu'))
+    x = MaxPooling3D(
+        pool_size=(1,2,2), strides=(1,2,2), padding='valid', data_format=None)(x)
+
+    # Fully connected layer
+    x = Flatten(name='flattened')(x)     
+
+    x = Dense(256, activation='relu', name="fc_1")(x)                                    # Classify the data into 100 features, make all negatives 0
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Dropout(drop)(x)       
+
+    x = Dense(256, activation='relu', name="fc_2")(x)                                    # Classify the data into 100 features, make all negatives 0
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Dropout(drop)(x)       
+
+    #categorical output of the angle
+    angle_out = Dense(15, activation='softmax', name='angle_out')(x)        # Connect every input with every output and output 15 hidden units. Use Softmax to give percentage. 15 categories and find best one based off percentage 0.0-1.0
+   
+    #continous output of throttle
+    throttle_out = Dense(20, activation='softmax', name='throttle_out')(x)      # Reduce to 1 number, Positive number only
+
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
+
+    print("model.output.shape:",model.output)
+    print("model.input.shape:",model.input)
+
+    return model
 
 def build_3d_cnn(w, h, d, s, num_outputs):
     from keras.layers import Input, Dense
@@ -641,36 +729,40 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     # Second layer
     model.add(Conv3D(
         filters=16, kernel_size=(3,3,3), strides=(1,3,3),
-        data_format='channels_last', padding='same')
+        data_format='channels_last', padding='same',
+        activation='relu')
     )
-    model.add(Activation('relu'))
+    #model.add(Activation('relu'))
     model.add(MaxPooling3D(
         pool_size=(1,2,2), strides=(1,2,2), padding='valid', data_format=None)
     )
     # Third layer
     model.add(Conv3D(
         filters=32, kernel_size=(3,3,3), strides=(1,1,1),
-        data_format='channels_last', padding='same')
+        data_format='channels_last', padding='same',
+        activation='relu')
     )
-    model.add(Activation('relu'))
+#    model.add(Activation('relu'))
     model.add(MaxPooling3D(
         pool_size=(1, 2, 2), strides=(1,2,2), padding='valid', data_format=None)
     )
     # Fourth layer
     model.add(Conv3D(
         filters=64, kernel_size=(3,3,3), strides=(1,1,1),
-        data_format='channels_last', padding='same')
+        data_format='channels_last', padding='same',
+        activation='relu')
     )
-    model.add(Activation('relu'))
+#    model.add(Activation('relu'))
     model.add(MaxPooling3D(
         pool_size=(1,2,2), strides=(1,2,2), padding='valid', data_format=None)
     )
     # Fifth layer
     model.add(Conv3D(
         filters=128, kernel_size=(3,3,3), strides=(1,1,1),
-        data_format='channels_last', padding='same')
+        data_format='channels_last', padding='same',
+        activation='relu')
     )
-    model.add(Activation('relu'))
+#    model.add(Activation('relu'))
     model.add(MaxPooling3D(
         pool_size=(1,2,2), strides=(1,2,2), padding='valid', data_format=None)
     )
@@ -691,6 +783,48 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     #model.add(Activation('tanh'))
 
     return model
+
+class Keras3D_CNN_Categorical(KerasPilot):
+    def __init__(self, image_w =160, image_h=120, image_d=3, seq_length=20, throttle_range=0.5, *args, **kwargs):
+        super(Keras3D_CNN_Categorical, self).__init__(*args, **kwargs)
+        self.model = build_3d_categorical_cnn(w=image_w, h=image_h, d=image_d, s=seq_length)
+        self.seq_length = seq_length
+        self.image_d = image_d
+        self.image_w = image_w
+        self.image_h = image_h
+        self.img_seq = []
+        self.compile()
+        self.throttle_range = throttle_range
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer, metrics=['acc'],
+                  loss={'angle_out': 'categorical_crossentropy', 
+                        'throttle_out': 'categorical_crossentropy'},
+                  loss_weights={'angle_out': 0.9, 'throttle_out': 0.1})
+
+    def run(self, img_arr):
+
+        if img_arr.shape[2] == 3 and self.image_d == 1:
+            img_arr = dk.utils.rgb2gray(img_arr)
+
+        while len(self.img_seq) < self.seq_length:
+            self.img_seq.append(img_arr)
+
+        self.img_seq = self.img_seq[1:]
+        self.img_seq.append(img_arr)
+        
+        img_arr = np.array(self.img_seq).reshape(1, self.seq_length, self.image_h, self.image_w, self.image_d )
+
+        angle_binned, throttle = self.model.predict(img_arr)
+        N = len(throttle[0])
+        
+        if N > 0:
+            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=self.throttle_range)
+        else:
+            throttle = throttle[0][0]
+        angle_unbinned = dk.utils.linear_unbin(angle_binned)
+
+        return angle_unbinned, throttle
 
 class KerasLatent(KerasPilot):
     def __init__(self, num_outputs=2, input_shape=(120, 160, 3), *args, **kwargs):

@@ -30,7 +30,7 @@ DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
 #VEHICLE
-DRIVE_LOOP_HZ = 5
+DRIVE_LOOP_HZ = 10
 MAX_LOOPS = 100000
 
 #CAMERA
@@ -116,7 +116,7 @@ JOYSTICK_DEADZONE = 0.0         # when non zero, this is the smallest throttle b
 MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.5
 
 #RNN or 3D
-SEQUENCE_LENGTH = 3
+SEQUENCE_LENGTH = 10
 
 #IMU
 HAVE_IMU = True

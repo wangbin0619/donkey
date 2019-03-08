@@ -738,6 +738,7 @@ class ShowPredictionPlots(BaseCommand):
             img = load_scaled_image_arr(img_filename, cfg)
             user_angle = float(record["user/angle"])
             user_throttle = float(record["user/throttle"])
+
             pilot_angle, pilot_throttle = model.run(img)
 
             user_angles.append(user_angle)

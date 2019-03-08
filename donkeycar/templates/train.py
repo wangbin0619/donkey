@@ -32,7 +32,7 @@ import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.parts.keras import KerasLinear, KerasIMU,\
      KerasCategorical, KerasBehavioral, Keras3D_CNN,\
-     KerasRNN_LSTM, KerasLatent
+     KerasRNN_LSTM, KerasLatent,Keras3D_CNN_Categorical
 from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
 
@@ -316,7 +316,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
     kl = get_model_by_type(model_type, cfg=cfg)
 
-    opts['categorical'] = type(kl) in [KerasCategorical, KerasBehavioral]
+    opts['categorical'] = type(kl) in [KerasCategorical, KerasBehavioral, Keras3D_CNN_Categorical]
 
     print('training with model type', type(kl))
 
@@ -469,6 +469,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                         X = [img_arr, np.array(inputs_bvh)]
                     else:
                         X = [img_arr]
+
+                    print("------- img_out", img_out, "model_out_shape", model_out_shape)
 
                     if img_out:
                         y = [out_img, np.array(angles), np.array(throttles)]
@@ -696,6 +698,10 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     print("sequence of images training")    
 
     kl = dk.utils.get_model_by_type(model_type=model_type, cfg=cfg)
+
+    #wangbin
+    opts = { 'cfg' : cfg}
+    opts['categorical'] = type(kl) in [Keras3D_CNN_Categorical]
     
     tubs = gather_tubs(cfg, tub_names)
     
@@ -729,6 +735,11 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
 
         angle = float(json_data['user/angle'])
         throttle = float(json_data["user/throttle"])
+
+        #wangbin
+        if opts['categorical']:
+            angle = dk.utils.linear_bin(angle)
+            throttle = dk.utils.linear_bin(throttle, N=20, offset=0, R=opts['cfg'].MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
 
         sample['target_output'] = np.array([angle, throttle])
         sample['angle'] = angle
@@ -839,7 +850,6 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
                     b_vec_in.append(vec_in)
 
                     b_labels.append(labels)
-
                 
                 if look_ahead:
                     X = [np.array(b_inputs_img).reshape(batch_size,\
@@ -849,7 +859,32 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
                 else:
                     X = [np.array(b_inputs_img).reshape(batch_size,\
                         cfg.SEQUENCE_LENGTH, cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)]
-                    y = np.array(b_labels).reshape(batch_size, 2)
+
+                    #wangbin 
+                    if opts['categorical']:
+                        y = np.array(b_labels)
+
+                        y_angles = []
+                        y_throttles = []
+
+                        k_angles = np.array(y[:,0,0])
+                        for k_angle in k_angles:
+                            y_angles.append(np.array(k_angle))
+
+                        k_throttles = np.array(y[:,0,1])
+                        for k_throttle in k_throttles:
+                            y_throttles.append(np.array(k_throttle))
+                        
+                        y_angles = np.array(y_angles)
+                        y_throttles = np.array(y_throttles)
+                        y = [y_angles, y_throttles]
+                        '''
+                        print(">>>>>y_angles: ",y_angles.shape,y_angles)
+                        print(">>>> b_labels: {}, y: {}, y_angles: {} y_throttles: {}".format(
+                            type(b_labels),type(y),y_angles.shape,y_throttles.shape))
+                        '''
+                    else:
+                        y = np.array(b_labels).reshape(batch_size, 2)
 
                 yield X, y
 
