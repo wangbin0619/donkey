@@ -469,8 +469,6 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                     else:
                         X = [img_arr]
 
-                    print("------- img_out", img_out, "model_out_shape", model_out_shape)
-
                     if img_out:
                         y = [out_img, np.array(angles), np.array(throttles)]
                     elif model_out_shape[1] == 2:
