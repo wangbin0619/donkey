@@ -591,8 +591,8 @@ class Keras3D_CNN(KerasPilot):
     def __init__(self, image_w =160, image_h=120, image_d=3, seq_length=20, num_outputs=2, *args, **kwargs):
         super(Keras3D_CNN, self).__init__(*args, **kwargs)
         #wangbin
-        self.model = build_3d_cnn(w=image_w, h=image_h, d=image_d, s=seq_length, num_outputs=num_outputs)
-        #self.model = build_3d_categorical_cnn(w=image_w, h=image_h, d=image_d, s=seq_length, num_outputs=num_outputs)
+        #self.model = build_3d_cnn(w=image_w, h=image_h, d=image_d, s=seq_length, num_outputs=num_outputs)
+        self.model = build_3d_categorical_cnn(w=image_w, h=image_h, d=image_d, s=seq_length, num_outputs=num_outputs)
         self.seq_length = seq_length
         self.image_d = image_d
         self.image_w = image_w
