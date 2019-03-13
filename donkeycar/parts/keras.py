@@ -626,6 +626,7 @@ class Keras3D_CNN(KerasPilot):
         throttle = outputs[0][1]
         return steering, throttle
 
+
 def build_3d_categorical_cnn(w, h, d, s):
     from keras.layers import Input, Dense
     from keras.models import Sequential
